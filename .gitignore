@@ -1,2 +1,5 @@
 .vscode
 build
+driveoffsets.inc
+zig-cache
+zig-out
