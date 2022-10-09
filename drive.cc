@@ -25,11 +25,13 @@ std::unordered_map<std::string, int32_t> DRIVE_READ_OFFSETS =
 };
 
 
+static const DriveConfig DRIVE_CONFIG_GENERIC = {"", "", "", "", 0, 0, -150, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::GENERIC};
+
 // drive strings are normalized (trimmed and exactly one space between words)
 // the same normalize operation is performed when detecting the drive and looking up the read offset
-// match is performed on the first 3 entries, 4th one is optional (it's set for the drives I own)
+// match is performed on the vendor / product / revision level, vendor specific is just for my reference for the drives I own
 // if string is empty, the match is always true
-static const std::vector<DriveInfo> SUPPORTED_DRIVES =
+static const std::vector<DriveConfig> KNOWN_DRIVES =
 {
 	// PLEXTOR OLD
 //	{"PLEXTOR", "CD-ROM PX-8XCS"  , "", ""},
@@ -44,57 +46,51 @@ static const std::vector<DriveInfo> SUPPORTED_DRIVES =
 //	{"PLEXTOR", "CD-ROM PX-40TW"  , "", ""},
 
 	// PLEXTOR CD
-	{"PLEXTOR", "CD-R PREMIUM"  , "1.04", "09/04/03 15:00",  +30, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "CD-R PREMIUM2" , ""    , ""              ,  +30, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "CD-R PX-320A"  , ""    , ""              ,  +98, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "CD-R PX-R412C" , ""    , ""              , +355, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "CD-R PX-R820T" , ""    , ""              , +355, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "CD-R PX-S88T"  , ""    , ""              ,  +98, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "CD-R PX-W1210A", ""    , ""              ,  +99, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "CD-R PX-W1210S", ""    , ""              ,  +98, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "CD-R PX-W124TS", ""    , ""              , +943, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "CD-R PX-W1610A", ""    , ""              ,  +99, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "CD-R PX-W2410A", ""    , ""              ,  +98, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "CD-R PX-W4012A", "1.07", "03/22/06 09:00",  +98, 294, DriveInfo::Type::PLEXTOR}, // CHECKED
-	{"PLEXTOR", "CD-R PX-W4012S", ""    , ""              ,  +98, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "CD-R PX-W4220T", ""    , ""              , +355, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "CD-R PX-W4824A", "1.07", "03/24/06 14:00",  +98, 294, DriveInfo::Type::PLEXTOR}, // CHECKED // extremely slow reading lead-in
-	{"PLEXTOR", "CD-R PX-W5224A", "1.04", "04/10/06 17:00",  +30, 294, DriveInfo::Type::PLEXTOR}, // CHECKED
-	{"PLEXTOR", "CD-R PX-W8220T", ""    , ""              , +355, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "CD-R PX-W8432T", ""    , ""              , +355, 294, DriveInfo::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PREMIUM"  , "1.04", "09/04/03 15:00",  +30, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PREMIUM2" , ""    , ""              ,  +30, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PX-320A"  , ""    , ""              ,  +98, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PX-R412C" , ""    , ""              , +355, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PX-R820T" , ""    , ""              , +355, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PX-S88T"  , ""    , ""              ,  +98, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PX-W1210A", ""    , ""              ,  +99, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PX-W1210S", ""    , ""              ,  +98, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PX-W124TS", ""    , ""              , +943, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PX-W1610A", ""    , ""              ,  +99, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PX-W2410A", ""    , ""              ,  +98, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PX-W4012A", "1.07", "03/22/06 09:00",  +98, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR}, // CHECKED
+	{"PLEXTOR", "CD-R PX-W4012S", ""    , ""              ,  +98, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PX-W4220T", ""    , ""              , +355, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PX-W4824A", "1.07", "03/24/06 14:00",  +98, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR}, // CHECKED: extremely slow reading lead-in
+	{"PLEXTOR", "CD-R PX-W5224A", "1.04", "04/10/06 17:00",  +30, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR}, // CHECKED
+	{"PLEXTOR", "CD-R PX-W8220T", ""    , ""              , +355, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "CD-R PX-W8432T", ""    , ""              , +355, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
 
 	// PLEXTOR DVD
-	{"PLEXTOR", "DVDR PX-704A" , ""    , ""              ,  +30, 294, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "DVDR PX-708A" , "1.12", "03/13/06 21:00",  +30, 294, DriveInfo::Type::PLEXTOR}, // CHECKED
-	{"PLEXTOR", "DVDR PX-708A2", ""    , ""              ,  +30, 295, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "DVDR PX-712A" , "1.09", "03/31/06 10:00",  +30, 295, DriveInfo::Type::PLEXTOR}, // CHECKED
-	{"PLEXTOR", "DVDR PX-714A" , ""    , ""              ,  +30, 295, DriveInfo::Type::PLEXTOR},
-	{"PLEXTOR", "DVDR PX-716A" , "1.11", "03/23/07 15:10",  +30, 295, DriveInfo::Type::PLEXTOR}, // CHECKED
-	{"PLEXTOR", "DVDR PX-716A" , "1.58", "03/23/07 15:10",  +30, 295, DriveInfo::Type::PLEXTOR}, // CHECKED
-	{"PLEXTOR", "DVDR PX-716A" , "1.59", "12/15/05 09:20",  +30, 295, DriveInfo::Type::PLEXTOR}, // CHECKED
-	{"PLEXTOR", "DVDR PX-716A" , "1.5A", "10/19/06 15:00",  +30, 295, DriveInfo::Type::PLEXTOR}, // CHECKED
-	{"PLEXTOR", "DVDR PX-716AL", ""    , ""              ,  +30, 295, DriveInfo::Type::PLEXTOR},
-//	{"PLEXTOR", "DVDR PX-740A" , "1.02", "12/19/05"      , +618,   0, DriveInfo::Type::PLEXTOR}, // CHECKED: wrong chipset
-	{"PLEXTOR", "DVDR PX-755A" , "1.08", "08/18/07 15:10",  +30, 295, DriveInfo::Type::PLEXTOR}, // CHECKED
-	{"PLEXTOR", "DVDR PX-760A" , "1.07", "08/18/07 15:10",  +30, 295, DriveInfo::Type::PLEXTOR}, // CHECKED
+	{"PLEXTOR", "DVDR PX-704A" , ""    , ""              ,  +30, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "DVDR PX-708A" , "1.12", "03/13/06 21:00",  +30, 294, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR}, // CHECKED
+	{"PLEXTOR", "DVDR PX-708A2", ""    , ""              ,  +30, 295, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "DVDR PX-712A" , "1.09", "03/31/06 10:00",  +30, 295, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR}, // CHECKED
+	{"PLEXTOR", "DVDR PX-714A" , ""    , ""              ,  +30, 295, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+	{"PLEXTOR", "DVDR PX-716A" , "1.11", "03/23/07 15:10",  +30, 295, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR}, // CHECKED
+	{"PLEXTOR", "DVDR PX-716A" , "1.58", "03/23/07 15:10",  +30, 295, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR}, // CHECKED
+	{"PLEXTOR", "DVDR PX-716A" , "1.59", "12/15/05 09:20",  +30, 295, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR}, // CHECKED
+	{"PLEXTOR", "DVDR PX-716A" , "1.5A", "10/19/06 15:00",  +30, 295, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR}, // CHECKED
+	{"PLEXTOR", "DVDR PX-716AL", ""    , ""              ,  +30, 295, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR},
+//	{"PLEXTOR", "DVDR PX-740A" , "1.02", "12/19/05"      , +618,   0, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::GENERIC}, // CHECKED: no D8
+	{"PLEXTOR", "DVDR PX-755A" , "1.08", "08/18/07 15:10",  +30, 295, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR}, // CHECKED
+	{"PLEXTOR", "DVDR PX-760A" , "1.07", "08/18/07 15:10",  +30, 295, -75, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR}, // CHECKED
 
 	// LG/ASUS
-	{"ASUS"    , "BW-16D1HT"      , "3.02", "W000800KL8J9NJ3134" , +6, 0, DriveInfo::Type::LG_ASUS}, // CHECKED
-	{"ASUS"    , "BW-16D1HT"      , "3.10", "WM01601KL8J9NJ3134" , +6, 0, DriveInfo::Type::LG_ASUS}, // RIB
-//	{"HL-DT-ST", "DVDRAM GH24NSC0", "LY00", "C010101 KMIJ8O50256", +6, 0, DriveInfo::Type::LG_ASUS},
-//	{"HL-DT-ST", "BD-RE WH16NS40" , "1.05", "N000900KLZL4TG5625" , +6, 0, DriveInfo::Type::LG_ASUS},
+	{"ASUS"    , "BW-16D1HT"      , "3.02", "W000800KL8J9NJ3134" , +6, 0, -135, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::LG_ASUS}, // CHECKED
+//	{"ASUS"    , "BW-16D1HT"      , "3.10", "WM01601KL8J9NJ3134" , +6, 0, -135, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::GENERIC}, // RIB
+//	{"HL-DT-ST", "DVDRAM GH24NSC0", "LY00", "C010101 KMIJ8O50256", +6, 0, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::LG_ASUS},
+//	{"HL-DT-ST", "BD-RE WH16NS40" , "1.05", "N000900KLZL4TG5625" , +6, 0, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::LG_ASUS},
+	{"ASUS"    , "SDRW-08D2S-U"   , "B901", "2015/03/03 15:29"   , +6, 0, 0, DriveConfig::SectorOrder::DATA_SUB_C2, DriveConfig::Type::GENERIC}, // CHECKED, internal model: DU-8A6NH11B
 
 	// OTHER
-//	{"QPS"    , "CD-W524E"      , "1.5A", "10/23/01"      ,  +686, 0, DriveInfo::Type::PLEXTOR}, // TEAC
+//	{"QPS"    , "CD-W524E"      , "1.5A", "10/23/01"      ,  +686, 0, DriveConfig::SectorOrder::DATA_C2_SUB, DriveConfig::Type::PLEXTOR}, // TEAC
 };
 
-
-static const std::unordered_map<DriveInfo::Type, int32_t> PREGAP_START =
-{
-	{DriveInfo::Type::GENERIC, -150},
-	{DriveInfo::Type::PLEXTOR,  -75},
-	{DriveInfo::Type::LG_ASUS, -135}
-};
 
 // Plextor firmware blocked LBA ranges:
 // BE [-inf .. -20000], (-1000 .. -75)
@@ -105,14 +101,14 @@ static const std::unordered_map<DriveInfo::Type, int32_t> PREGAP_START =
 // 
 // It is also possible to read large negative offset ranges (starting from 0xFFFFFFFF - smallest negative 32-bit integer)
 // with BE command with disabled C2 if the disc first track is a data track. Regardless of a starting point, such reads
-// are "virtualized" by Plextor drive and will always start close to lead-in toc area and sequentially read until the end
-// of the data track under normal circumstances. After end of the data track, the drive is wrapping around and starts in
+// are "virtualized" by Plextor drive and will always start somewhere in the lead-in toc area and sequentially read until
+// the end of the data track under normal circumstances. After some point, the drive will wrap around and start in
 // the lead-in toc area again. This process will continue until drive reaches firmware blocked LBA ranges specified here.
 // However, any external pause between sequential reads (Debugger pause, sleep() call etc.) will lead to drive counter
 // resetting and starting reading in the lead-in toc area again.
 // 
 // However the following range, while preserving the above behaviour, is unlocked for both BE and D8 commands with
-// disabled C2. Use it to dynamically find first second of pregap based on the Q subcode and prepend it to the rest of
+// disabled C2. Use it to dynamically find first second of pre-gap based on the Q subcode and prepend it to the rest of
 // [-75 .. leadout) Plextor dump, optionally saving the lead-in
 static const std::pair<int32_t, int32_t> PLEXTOR_TOC_RANGE = {-20150, -1150};
 
@@ -129,37 +125,32 @@ constexpr uint32_t ASUS_CACHE_ENTRY_SIZE = 0xB00;
 constexpr uint32_t ASUS_CACHE_ENTRIES_COUNT = 1070;
 
 
-DriveInfo drive_get_info(const DriveQuery &drive_query)
+DriveConfig drive_get_config(const DriveQuery &drive_query)
 {
-	DriveInfo drive_info;
+	DriveConfig drive_config = DRIVE_CONFIG_GENERIC;
 
 	bool found = false;
-
-	for(auto const &di : SUPPORTED_DRIVES)
+	for(auto const &di : KNOWN_DRIVES)
 	{
 		if((di.vendor_id.empty() || di.vendor_id == drive_query.vendor_id) &&
 		   (di.product_id.empty() || di.product_id == drive_query.product_id) &&
 		   (di.product_revision_level.empty() || di.product_revision_level == drive_query.product_revision_level))
 		{
-			drive_info = di;
+			drive_config = di;
 			found = true;
 			break;
 		}
 	}
 
-	drive_info.vendor_id = drive_query.vendor_id;
-	drive_info.product_id = drive_query.product_id;
-	drive_info.product_revision_level = drive_query.product_revision_level;
-	drive_info.vendor_specific = drive_query.vendor_specific;
+	drive_config.vendor_id = drive_query.vendor_id;
+	drive_config.product_id = drive_query.product_id;
+	drive_config.product_revision_level = drive_query.product_revision_level;
+	drive_config.vendor_specific = drive_query.vendor_specific;
 
 	if(!found)
-	{
-		drive_info.read_offset = drive_get_generic_read_offset(drive_info.vendor_id, drive_info.product_id);
-		drive_info.c2_offset = 0;
-		drive_info.type = DriveInfo::Type::GENERIC;
-	}
+		drive_config.read_offset = drive_get_generic_read_offset(drive_config.vendor_id, drive_config.product_id);
 
-	return drive_info;
+	return drive_config;
 }
 
 
@@ -191,17 +182,7 @@ int32_t drive_get_generic_read_offset(const std::string &vendor, const std::stri
 }
 
 
-int32_t drive_get_pregap_start(DriveInfo::Type type)
-{
-	auto it = PREGAP_START.find(type);
-	if(it == PREGAP_START.end())
-		throw_line("unexpected drive type encountered");
-
-	return it->second;
-}
-
-
-std::string drive_info_string(const DriveInfo &di)
+std::string drive_info_string(const DriveConfig &di)
 {
 	std::string revision_level(di.product_revision_level.empty() ? "" : fmt::format(", revision level: {}", di.product_revision_level));
 	std::string vendor_specific(di.vendor_specific.empty() ? "" : fmt::format(", vendor specific: {}", di.vendor_specific));
@@ -214,13 +195,14 @@ void print_supported_drives()
 {
 	LOG("");
 	LOG("supported drives: ");
-	for(auto const &di : SUPPORTED_DRIVES)
-		LOG("{}", drive_info_string(di));
+	for(auto const &di : KNOWN_DRIVES)
+		if(di.type != DriveConfig::Type::GENERIC)
+			LOG("{}", drive_info_string(di));
 	LOG("");
 }
 
 
-std::vector<uint8_t> plextor_read_leadin(SPTD &sptd)
+std::vector<uint8_t> plextor_read_leadin(SPTD &sptd, const DriveConfig &di)
 {
 	std::vector<uint8_t> buffer;
 
@@ -239,10 +221,13 @@ std::vector<uint8_t> plextor_read_leadin(SPTD &sptd)
 		LOG_R();
 		LOGC_F("[LBA: {:6}]", lba);
 		
-		status = cmd_read_sector(sptd, entry + sizeof(SPTD::Status), lba, 1, CDB_OperationCode::READ_CDDA, ReadType::DATA_SUB, ReadFilter::CDDA);
+		std::vector<uint8_t> sector_buffer;
+		status = cmd_read_cdda(sptd, sector_buffer, lba, 1, READ_CDDA_SubCode::DATA_SUB);
+//		status = cmd_read_cd(sptd, sector_buffer, lba, 1, READ_CD_ExpectedSectorType::ALL_TYPES, READ_CD_ErrorField::NONE, READ_CD_SubChannel::RAW);
 
 		if(!status.status_code)
 		{
+			memcpy(entry + sizeof(SPTD::Status), sector_buffer.data(), sector_buffer.size());
 			uint8_t *sub_data = entry + sizeof(SPTD::Status) + CD_DATA_SIZE;
 
 			ChannelQ Q;
@@ -257,7 +242,7 @@ std::vector<uint8_t> plextor_read_leadin(SPTD &sptd)
 				uint8_t adr = Q.control_adr & 0x0F;
 				if(adr == 1 && Q.mode1.tno)
 				{
-					int32_t lba_stop = lba + (drive_get_pregap_start(DriveInfo::Type::PLEXTOR) - MSF_LBA_SHIFT);
+					int32_t lba_stop = lba + (di.pregap_start - MSF_LBA_SHIFT);
 					if(lba_stop < lba_end)
 						lba_end = lba_stop;
 				}
@@ -351,7 +336,7 @@ std::vector<uint8_t> asus_cache_extract(const std::vector<uint8_t> &cache, int32
 
 	if(index_start != ASUS_CACHE_ENTRIES_COUNT)
 	{
-		data.reserve(entries_count * ASUS_LEADOUT_ENTRY_SIZE);
+		data.reserve(entries_count * CD_RAW_DATA_SIZE);
 
 		for(uint32_t i = 0; i < entries_count; ++i)
 		{
