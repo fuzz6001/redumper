@@ -16,9 +16,9 @@ namespace gpsxre
 
 const char TOC::_ISRC_TABLE[] =
 {
-	'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '_', '_', '_', '_', '_', '_', 
+	'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '_', '_', '_', '_', '_', '_',
 	'_', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', '_', '_', '_', '_', 
+	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', '_', '_', '_', '_',
 	'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_'
 };
 
@@ -519,6 +519,22 @@ bool TOC::UpdateCDTEXT(const std::vector<uint8_t> &cdtext_buffer)
 }
 
 
+void TOC::GenerateIndex0()
+{
+	for(auto &s : sessions)
+	{
+		for(uint32_t i = 0; i < s.tracks.size(); ++i)
+		{
+			auto &t = s.tracks[i];
+			if(!t.indices.empty())
+				t.lba_start = t.indices.front() + MSF_LBA_SHIFT;
+			if(i)
+				s.tracks[i - 1].lba_end = t.lba_start;
+		}
+	}
+}
+
+
 void TOC::Print() const
 {
 	std::string track_format = fmt::format("{{:0{}}}", (uint32_t)log10(sessions.back().tracks.back().track_number) + 1);
@@ -553,7 +569,7 @@ void TOC::Print() const
 			if(t.control & (uint8_t)ChannelQ::Control::PRE_EMPHASIS)
 				flags += ", pre-emphasis";
 
-			LOG("{}track {} {{ {} }}", std::string(multisession ? 4 : 2, ' '), 
+			LOG("{}track {} {{ {} }}", std::string(multisession ? 4 : 2, ' '),
 						   fmt::vformat(track_format, fmt::make_format_args(t.track_number)), flags);
 
 			auto indices = t.indices;
